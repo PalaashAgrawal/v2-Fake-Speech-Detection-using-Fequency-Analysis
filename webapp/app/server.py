@@ -9,6 +9,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
 
+#_________________________________________________________________________________________________________
 #for .wav to .png conversion
 import numpy
 import matplotlib.pyplot as plt
@@ -17,7 +18,6 @@ from scipy.io import wavfile
 from scipy.fftpack import fft
 from PIL import Image
 import os
-
 #__________________________________________________________________________________________________________
 
 export_file_url = 'https://drive.google.com/uc?export=download&id=10XQKmnv7zfAAER-PFoJIV2cpt6Hglt-1'
@@ -68,11 +68,13 @@ async def homepage(request):
 
 @app.route('/analyze', methods=['POST'])
 async def analyze(request):
-    #wav_data = await request.form()
-    #____________________________________________________________________________
-    #converting wav to image
-    samplingFreq, mySound = wavfile.read(await request.form())
-    mySound = mySound / (2.**15)
+    img_data = await request.form()
+    #img_bytes = await (img_data['file'].read())
+    #img = open_image(BytesIO(img_bytes))
+
+#______________________________________________________________________   
+    samplingFreq, audio = wavfile.read(img_data)
+     mySound = mySound / (2.**15)
     signalDuration =  mySound.shape[0] / samplingFreq
     if signalDuration>5.0:
         mySound=mySound[:5*samplingFreq]
@@ -93,12 +95,11 @@ async def analyze(request):
     img_data=plt.figure()
     plt.plot(freqArray/1000, 10 * numpy.log10 (fftArray), color='b')
     plt.axis('off')
-    #____________________________________________________________________
-        
-    img_bytes = await (img_data['file'].read())
+    plt.savefig("a.png")
+#_________________________________________________________
     
-    img = open_image(BytesIO(img_bytes))
-    prediction = learn.predict(img)[0]
+    
+    prediction = learn.predict('a.png')[0]
     return JSONResponse({'result': str(prediction)})
 
 
