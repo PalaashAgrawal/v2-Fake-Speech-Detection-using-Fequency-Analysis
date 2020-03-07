@@ -74,22 +74,22 @@ async def analyze(request):
 
 #______________________________________________________________________   
     samplingFreq, audio = wavfile.read(img_data)
-     mySound = mySound / (2.**15)
-    signalDuration =  mySound.shape[0] / samplingFreq
+    audio = audio / (2.**15)
+    signalDuration =  audio.shape[0] / samplingFreq
     if signalDuration>5.0:
-        mySound=mySound[:5*samplingFreq]
-    mySoundLength = len(mySound)
-    fftArray = fft(mySound)
-    numUniquePoints = int(numpy.ceil((mySoundLength + 1) / 2))
+        audio=audio[:5*samplingFreq]
+    audioLength = len(audio)
+    fftArray = fft(audio)
+    numUniquePoints = int(numpy.ceil((audioLength + 1) / 2))
     fftArray = fftArray[0:numUniquePoints]
     fftArray = abs(fftArray)
-    fftArray = fftArray / float(mySoundLength)
+    fftArray = fftArray / float(audioLength)
     fftArray = fftArray **2
-    if mySoundLength % 2 > 0:
+    if audioLength % 2 > 0:
         fftArray[1:len(fftArray)] = fftArray[1:len(fftArray)] * 2
     else:
         fftArray[1:len(fftArray) -1] = fftArray[1:len(fftArray) -1] * 2
-    freqArray = numpy.arange(0, numUniquePoints, 1.0) * (samplingFreq / mySoundLength);
+    freqArray = numpy.arange(0, numUniquePoints, 1.0) * (samplingFreq / audioLength);
     fftArraymin=numpy.min(fftArray[numpy.nonzero(fftArray)])
     fftArray[fftArray==0]=fftArraymin
     img_data=plt.figure()
