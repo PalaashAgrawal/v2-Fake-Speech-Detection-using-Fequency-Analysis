@@ -19,7 +19,62 @@ from scipy.fftpack import fft
 from PIL import Image
 import os
 #__________________________________________________________________________________________________________
+def transform(audio,samplingFreq):
+    audio = audio / (2.**15)
 
+    #Check sample points and sound channel for duel channel(5060, 2) or  (5060, ) for mono channel
+    mySoundShape = audio.shape
+    samplePoints = float(audio.shape[0])
+
+    #Get duration of sound file
+    signalDuration =  audio.shape[0] / samplingFreq
+    
+    if signalDuration>5.0:
+        audio=audio[:5*samplingFreq]
+    
+    #If two channels, then select only one channel
+    mySoundOneChannel = audio#[:,0]
+    mySoundLength = len(audio)
+
+    #Take the Fourier transformation on given sample point 
+    #fftArray = fft(mySound)
+    fftArray = fft(mySoundOneChannel)
+
+    numUniquePoints = int(numpy.ceil((mySoundLength + 1) / 2))
+    fftArray = fftArray[0:numUniquePoints]
+
+    fftArray = abs(fftArray) #modulus of a complex number
+
+    #Scale the fft array by length of sample points so that magnitude does not depend on
+    #the length of the signal or on its sampling frequency
+
+    fftArray = fftArray / float(mySoundLength)
+
+    #FFT has both positive and negative information. Square to get positive only
+    fftArray = fftArray **2
+
+    #Multiply by two (research why?)
+    #Odd NFFT excludes Nyquist point
+    if mySoundLength % 2 > 0: #we've got odd number of points in fft
+        fftArray[1:len(fftArray)] = fftArray[1:len(fftArray)] * 2
+
+    else: #We've got even number of points in fft
+        fftArray[1:len(fftArray) -1] = fftArray[1:len(fftArray) -1] * 2  
+
+    freqArray = numpy.arange(0, numUniquePoints, 1.0) * (samplingFreq / mySoundLength);
+
+    
+    audioname=str(audiopath)
+    #Plot the frequency
+    fftArraymin=numpy.min(fftArray[numpy.nonzero(fftArray)])
+    fftArray[fftArray==0]=fftArraymin
+    img =plt.figure()
+    plt.plot(freqArray/1000, 10 * numpy.log10 (fftArray), color='b')
+    plt.xlabel('Frequency (Khz)')
+    plt.ylabel('Power (dB)')
+    plt.axis('off')
+    return img
+___________________________________________________
 export_file_url = 'https://drive.google.com/uc?export=download&id=10XQKmnv7zfAAER-PFoJIV2cpt6Hglt-1'
 export_file_name = 'export.pkl'
 
@@ -72,34 +127,17 @@ async def analyze(request):
     #img_bytes = await (img_data['file'].read())
     #img = open_image(BytesIO(img_bytes))
 
-#______________________________________________________________________   
-    samplingFreq, audio = wavfile.read(img_data)
-    audio = audio / (2.**15)
-    signalDuration =  audio.shape[0] / samplingFreq
-    if signalDuration>5.0:
-        audio=audio[:5*samplingFreq]
-    audioLength = len(audio)
-    fftArray = fft(audio)
-    numUniquePoints = int(numpy.ceil((audioLength + 1) / 2))
-    fftArray = fftArray[0:numUniquePoints]
-    fftArray = abs(fftArray)
-    fftArray = fftArray / float(audioLength)
-    fftArray = fftArray **2
-    if audioLength % 2 > 0:
-        fftArray[1:len(fftArray)] = fftArray[1:len(fftArray)] * 2
-    else:
-        fftArray[1:len(fftArray) -1] = fftArray[1:len(fftArray) -1] * 2
-    freqArray = numpy.arange(0, numUniquePoints, 1.0) * (samplingFreq / audioLength);
-    fftArraymin=numpy.min(fftArray[numpy.nonzero(fftArray)])
-    fftArray[fftArray==0]=fftArraymin
-    img_data=plt.figure()
-    plt.plot(freqArray/1000, 10 * numpy.log10 (fftArray), color='b')
-    plt.axis('off')
-    plt.savefig("a.png")
-#_________________________________________________________
-    
-    
-    prediction = learn.predict('a.png')[0]
+    signal_freq,data=wavfile.read(img_data)
+    IMGfig=transform(data,signal_freq) #This is a figure and cannot be fed into the model. It Needs to be converted to an image first, without saving it.
+    _____________________
+    #now to convert figure to image
+    buffer = io.BytesIO()
+    IMG.savefig(buffer, format='png', dpi = 300)
+    buffer.seek(0)
+    img=open_image(buffer)
+    ___________________
+    prediction = learn.predict(img)[0]
+    buffer.close()
     return JSONResponse({'result': str(prediction)})
 
 
