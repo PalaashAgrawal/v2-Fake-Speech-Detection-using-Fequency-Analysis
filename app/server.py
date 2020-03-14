@@ -74,7 +74,7 @@ def transform(audio,samplingFreq):
     plt.ylabel('Power (dB)')
     plt.axis('off')
     return img
-___________________________________________________
+#___________________________________________________
 export_file_url = 'https://drive.google.com/uc?export=download&id=10XQKmnv7zfAAER-PFoJIV2cpt6Hglt-1'
 export_file_name = 'export.pkl'
 
@@ -129,13 +129,13 @@ async def analyze(request):
 
     signal_freq,data=wavfile.read(img_data)
     IMGfig=transform(data,signal_freq) #This is a figure and cannot be fed into the model. It Needs to be converted to an image first, without saving it.
-    _____________________
+   # _____________________
     #now to convert figure to image
     buffer = io.BytesIO()
     IMG.savefig(buffer, format='png', dpi = 300)
     buffer.seek(0)
     img=open_image(buffer)
-    ___________________
+    #___________________
     prediction = learn.predict(img)[0]
     buffer.close()
     return JSONResponse({'result': str(prediction)})
